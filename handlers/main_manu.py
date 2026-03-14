@@ -1,18 +1,20 @@
-from aiogram import F
-from aiogram.types import CallbackQuery
+# handlers/main_manu.py
+# ----------------------
 from aiogram import Router
+from aiogram.types import Message
+from aiogram.filters import CommandStart
 
-from keyboards.main_menu import main_keyboard
+# Импортируем функцию, а не переменную
+from keyboards.main_menu import get_main_keyboard
 from texts.messages import START_TEXT
 
 router = Router()
 
-
-@router.callback_query(F.data == "main_manu")
-async def back_to_menu(callback: CallbackQuery):
-    await callback.message.edit_text(
+@router.message(CommandStart())
+async def start_handler(message: Message):
+    user_id = message.from_user.id  # реальный Telegram ID
+    keyboard = get_main_keyboard(user_id)  # формируем клавиатуру для пользователя
+    await message.answer(
         START_TEXT,
-        reply_markup=main_keyboard
+        reply_markup=keyboard
     )
-
-    await callback.answer()
