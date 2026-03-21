@@ -1,13 +1,17 @@
-from __future__ import annotations
+from enum import Enum
 
+from sqlalchemy import BigInteger, Integer, String, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import DATETIME
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Integer, String, DateTime, ForeignKey
-
 from .base import Base
+
+
+class UserStatus(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 
 class User(Base):
@@ -20,6 +24,12 @@ class User(Base):
     )
 
     username: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+
+    status: Mapped[UserStatus] = mapped_column(
+        SAEnum(UserStatus, name="user_status"),
+        nullable=False,
+        default=UserStatus.USER,
+    )
 
     city_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("cities.id", ondelete="SET NULL"),
@@ -65,4 +75,3 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-
