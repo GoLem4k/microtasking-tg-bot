@@ -1,0 +1,9 @@
+SQLAlchemy
+PyMySQL
+aiomysql
+alembic
+pandas
+python-dotenv
+ipython
+jupyter
+mysqlclient
