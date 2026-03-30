@@ -33,6 +33,10 @@ class UserService:
         ref_parent_username: str | None = None,
         status: UserStatus = UserStatus.USER,
     ) -> User:
+        existing = await self.get_by_username(username)
+        if existing is not None:
+            return existing
+
         async with get_session() as session:
             ref_parent_id: int | None = None
 

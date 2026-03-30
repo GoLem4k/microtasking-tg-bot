@@ -50,6 +50,11 @@ class ShopService:
         base_reward: float | Decimal = 0,
     ) -> Shop:
         normalized = self._normalize_name(name)
+
+        existing = await self.get_by_name(normalized, city_id=city_id)
+        if existing is not None:
+            return existing
+
         async with get_session() as session:
             shop = Shop(
                 name=normalized,

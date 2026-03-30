@@ -28,6 +28,11 @@ class CityService:
 
     async def create(self, name: str) -> City:
         normalized = self._normalize_name(name)
+
+        existing = await self.get_by_name(normalized)
+        if existing is not None:
+            return existing
+
         async with get_session() as session:
             city = City(name=normalized)
             session.add(city)
