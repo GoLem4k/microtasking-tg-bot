@@ -6,5 +6,5 @@ router = Router()
 
 @router.callback_query(F.data == "start_task")
 async def start_task(callback: CallbackQuery):
-    await callback.message.edit_text("Начинаем задание 🚀")
+    await callback.message.edit_text("Начать задание 🚀")
     await callback.answer()

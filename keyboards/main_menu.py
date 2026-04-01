@@ -1,10 +1,8 @@
 # keyboards/main_menu.py
-# ----------------------
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from filters.is_admin import is_admin
 
-def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
-   
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+def get_main_keyboard(user_id: int, is_admin_flag: bool = False) -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(text="🚀 Приступить к заданию", callback_data="start_task")],
         [
@@ -17,7 +15,7 @@ def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
         ]
     ]
 
-    if is_admin(user_id):  # проверка с реальным ID
+    if is_admin_flag:
         buttons.append([InlineKeyboardButton(text="⚙️ Админ меню", callback_data="admin_main_menu")])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
