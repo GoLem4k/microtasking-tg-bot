@@ -1,13 +1,14 @@
 from aiogram import Router
-from aiogram.types import Message
 from aiogram.filters import CommandStart
+from aiogram.types import Message
 
-from keyboards.main_menu import get_main_keyboard
-from texts.messages import START_TEXT
 from filters.is_admin import is_admin
 from filters.is_new_user import is_new_user
+from keyboards.main_menu import get_main_keyboard
+from texts.messages import START_TEXT
 
 router = Router()
+
 
 
 def extract_ref_parent_id(message_text: str | None) -> int | None:
@@ -38,15 +39,14 @@ async def start_handler(message: Message):
     if ref_parent_id == user_id:
         ref_parent_id = None
 
-    if await is_new_user(user_id, username, ref_parent_id=ref_parent_id):
-        print("[DEBUG] Ветка нового пользователя")
-    else:
-        print("[DEBUG] Ветка старого пользователя")
+    await is_new_user(user_id, username, ref_parent_id=ref_parent_id)
 
     admin_flag = await is_admin(user_id)
     keyboard = get_main_keyboard(user_id, is_admin_flag=admin_flag)
 
     await message.answer(
         START_TEXT,
-        reply_markup=keyboard
+        reply_markup=keyboard,
+        disable_web_page_preview=True,
+        parse_mode="HTML"
     )

@@ -12,6 +12,7 @@ from .base import Base
 class UserStatus(str, Enum):
     USER = "user"
     ADMIN = "admin"
+    BAN = "ban"
 
 
 class User(Base):

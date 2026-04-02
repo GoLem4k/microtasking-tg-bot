@@ -7,20 +7,20 @@ help_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="📄 FAQ", url=FAQ_URL)],
         [
-            InlineKeyboardButton(text="📝 Канал", url=CHANNEL_URL),
+            InlineKeyboardButton(text="📢 Канал", url=CHANNEL_URL),
             InlineKeyboardButton(text="💬 Чат", url=CHAT_URL),
         ],
         [
-            InlineKeyboardButton(text="🪢 Отзывы", url=REVIEWS_URL),
-            InlineKeyboardButton(text="🤝 Поддержка", callback_data="help_support_start"),
+            InlineKeyboardButton(text="⭐ Отзывы", url=REVIEWS_URL),
+            InlineKeyboardButton(text="✉️ Написать в поддержку", callback_data="help_support_start"),
         ],
-        [InlineKeyboardButton(text="◀️ Назад в меню", callback_data="main_menu")],
+        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
     ]
 )
 
 cancel_support_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="◀️ Назад в помощь", callback_data="help")],
-        [InlineKeyboardButton(text="🏠 Назад в меню", callback_data="main_menu")],
+        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
     ]
 )

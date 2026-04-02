@@ -33,6 +33,26 @@ class UserService:
             result = await session.execute(stmt)
             return result.scalars().all()
 
+    async def get_all_active_recipients(self) -> Sequence[User]:
+        async with get_session() as session:
+            stmt = select(User).where(User.status != UserStatus.BAN).order_by(User.id)
+            result = await session.execute(stmt)
+            return result.scalars().all()
+
+    async def can_receive_bot_messages(self, user_id: int) -> bool:
+        async with get_session() as session:
+            stmt = select(User.status).where(User.id == user_id)
+            result = await session.execute(stmt)
+            status = result.scalar_one_or_none()
+            return status is not None and status != UserStatus.BAN
+
+    async def is_banned(self, user_id: int) -> bool:
+        async with get_session() as session:
+            stmt = select(User.status).where(User.id == user_id)
+            result = await session.execute(stmt)
+            status = result.scalar_one_or_none()
+            return status == UserStatus.BAN
+
     async def get_admin_users(self) -> Sequence[User]:
         async with get_session() as session:
             stmt = select(User).where(User.status == UserStatus.ADMIN).order_by(User.id)
@@ -142,15 +162,7 @@ class UserService:
                     ).label("pending_count"),
                     func.sum(
                         case(
-                            (
-                                TaskSubmission.status.in_(
-                                    [
-                                        SubmissionStatus.IN_PROGRESS,
-                                        SubmissionStatus.PENDING,
-                                    ]
-                                ),
-                                1,
-                            ),
+                            (TaskSubmission.status == SubmissionStatus.IN_PROGRESS, 1),
                             else_=0,
                         )
                     ).label("unfinished_count"),
@@ -332,7 +344,7 @@ class UserService:
         user_id: int,
         *,
         city_id: int | None = None,
-        ref_parent_username: str | None = None,
+        ref_parent_id: str | None = None,
         status: UserStatus | None = None,
     ) -> User | None:
         async with get_session() as session:
@@ -346,8 +358,8 @@ class UserService:
             if city_id is not None:
                 user.city_id = city_id
 
-            if ref_parent_username is not None:
-                stmt_parent = select(User).where(User.username == ref_parent_username)
+            if ref_parent_id is not None:
+                stmt_parent = select(User).where(User.id == ref_parent_id)
                 res_parent = await session.execute(stmt_parent)
                 parent = res_parent.scalars().first()
                 user.ref_parent_id = parent.id if parent else None

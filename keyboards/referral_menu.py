@@ -17,6 +17,6 @@ def get_referral_keyboard(referral_link: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="📨 Поделиться", url=share_url)],
-            [InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="main_menu")],
+            [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
         ]
     )

@@ -70,6 +70,7 @@ async def open_withdraw_menu(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         get_withdraw_main_text(),
         reply_markup=get_withdraw_methods_keyboard(),
+        disable_web_page_preview=True,
     )
     await callback.answer()
 
@@ -80,6 +81,7 @@ async def change_bank(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         get_withdraw_main_text(),
         reply_markup=get_withdraw_methods_keyboard(),
+        disable_web_page_preview=True,
     )
     await callback.answer()
 
@@ -89,7 +91,7 @@ async def withdraw_yoomoney(callback: CallbackQuery, state: FSMContext):
     balance = await get_user_balance(callback.from_user.id)
     await state.set_state(WithdrawState.waiting_requisites)
     await state.update_data(method="yoomoney", method_name=METHOD_NAMES["yoomoney"], balance=balance)
-    await callback.message.edit_text(get_yoomoney_text(balance), reply_markup=get_change_bank_keyboard())
+    await callback.message.edit_text(get_yoomoney_text(balance), reply_markup=get_change_bank_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -98,7 +100,7 @@ async def withdraw_tbank(callback: CallbackQuery, state: FSMContext):
     balance = await get_user_balance(callback.from_user.id)
     await state.set_state(WithdrawState.waiting_requisites)
     await state.update_data(method="tbank", method_name=METHOD_NAMES["tbank"], balance=balance)
-    await callback.message.edit_text(get_tbank_text(balance), reply_markup=get_change_bank_keyboard())
+    await callback.message.edit_text(get_tbank_text(balance), reply_markup=get_change_bank_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -107,7 +109,7 @@ async def withdraw_sber(callback: CallbackQuery, state: FSMContext):
     balance = await get_user_balance(callback.from_user.id)
     await state.set_state(WithdrawState.waiting_requisites)
     await state.update_data(method="sber", method_name=METHOD_NAMES["sber"], balance=balance)
-    await callback.message.edit_text(get_sber_text(balance), reply_markup=get_change_bank_keyboard())
+    await callback.message.edit_text(get_sber_text(balance), reply_markup=get_change_bank_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -116,7 +118,7 @@ async def withdraw_cryptobot(callback: CallbackQuery, state: FSMContext):
     balance = await get_user_balance(callback.from_user.id)
     await state.clear()
     await state.update_data(method="cryptobot", method_name=METHOD_NAMES["cryptobot"], balance=balance)
-    await callback.message.edit_text(get_cryptobot_text(balance), reply_markup=get_cryptobot_keyboard())
+    await callback.message.edit_text(get_cryptobot_text(balance), reply_markup=get_cryptobot_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -125,7 +127,7 @@ async def withdraw_phone_balance(callback: CallbackQuery, state: FSMContext):
     balance = await get_user_balance(callback.from_user.id)
     await state.set_state(WithdrawState.waiting_requisites)
     await state.update_data(method="phone_balance", method_name=METHOD_NAMES["phone_balance"], balance=balance)
-    await callback.message.edit_text(get_phone_balance_text(balance), reply_markup=get_change_bank_keyboard())
+    await callback.message.edit_text(get_phone_balance_text(balance), reply_markup=get_change_bank_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -141,7 +143,7 @@ async def withdraw_crypto_usdt(callback: CallbackQuery, state: FSMContext):
         minimum=WITHDRAW_MINIMUMS["cryptobot"],
         extra="Вы выбрали вывод через CryptoBot в валюте USDT TRC20.",
     )
-    await callback.message.edit_text(text, reply_markup=get_change_bank_keyboard())
+    await callback.message.edit_text(text, reply_markup=get_change_bank_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 

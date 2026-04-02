@@ -3,9 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import (
-    Integer, String, ForeignKey, Numeric, DateTime, Enum as SAEnum, Text, Boolean
-)
+from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -17,6 +15,11 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
 
 
+class TaskCategory(str, Enum):
+    MAIN = "main"
+    EXTRA = "extra"
+
+
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -24,7 +27,6 @@ class Task(Base):
 
     title: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-
     note: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     city_id: Mapped[int | None] = mapped_column(
@@ -58,6 +60,12 @@ class Task(Base):
         SAEnum(TaskStatus, name="task_status"),
         nullable=False,
         default=TaskStatus.ACTIVE,
+    )
+
+    category: Mapped[TaskCategory] = mapped_column(
+        SAEnum(TaskCategory, name="task_category"),
+        nullable=False,
+        default=TaskCategory.MAIN,
     )
 
     created_at: Mapped[datetime] = mapped_column(

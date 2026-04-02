@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.idea/
+.vscode/
+.git/
+.gitignore
+.env
+README.md
+README_patch_note.txt

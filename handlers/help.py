@@ -1,24 +1,24 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
+from db.services.support_requests_service import SupportRequestService
 from filters.is_admin import is_admin
-from keyboards.help_menu import help_keyboard, cancel_support_keyboard
+from keyboards.admin.support_menu import get_support_detail_keyboard
+from keyboards.help_menu import cancel_support_keyboard, help_keyboard
 from keyboards.main_menu import get_main_keyboard
-from keyboards.admin.support_menu import admin_support_keyboard
+from states.support import SupportState
 from texts.messages import (
     HELP_TEXT,
+    START_TEXT,
     SUPPORT_PROMPT_TEXT,
     SUPPORT_REQUEST_SAVED_TEXT,
-    get_admin_support_requests_text,
+    get_admin_support_request_detail_text,
 )
-from states.support import SupportState
-from db.services.users_service import UserService
-from db.services.support_requests_service import SupportRequestService
+from utils.admin_alerts import send_admin_alert
 
 router = Router()
-user_service = UserService()
 support_request_service = SupportRequestService()
 
 
@@ -28,6 +28,7 @@ async def help_handler(message: Message, state: FSMContext):
     await message.answer(
         HELP_TEXT,
         reply_markup=help_keyboard,
+        disable_web_page_preview=True,
     )
 
 
@@ -37,6 +38,7 @@ async def help_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         HELP_TEXT,
         reply_markup=help_keyboard,
+        disable_web_page_preview=True,
     )
     await callback.answer()
 
@@ -47,6 +49,7 @@ async def help_support_start(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         SUPPORT_PROMPT_TEXT,
         reply_markup=cancel_support_keyboard,
+        disable_web_page_preview=True,
     )
     await callback.answer()
 
@@ -63,26 +66,18 @@ async def save_support_request(message: Message, state: FSMContext):
         message_text=message.text.strip(),
     )
 
-    admin_users = await user_service.get_admin_users()
-
-    notify_text = (
-        "Новая заявка в поддержку\n\n"
-        f"ID заявки: {support_request.id}\n"
-        f"Пользователь: @{message.from_user.username} | ID: {message.from_user.id}\n"
-        f"Сообщение:\n{support_request.message_text}"
-        if message.from_user.username
-        else
-        "Новая заявка в поддержку\n\n"
-        f"ID заявки: {support_request.id}\n"
-        f"Пользователь: ID {message.from_user.id}\n"
-        f"Сообщение:\n{support_request.message_text}"
+    detail_text = get_admin_support_request_detail_text(support_request)
+    detail_keyboard = get_support_detail_keyboard(
+        support_request.id,
+        support_request.user_id,
+        back_callback="support",
     )
 
-    for admin in admin_users:
-        try:
-            await message.bot.send_message(admin.id, notify_text)
-        except Exception:
-            continue
+    await send_admin_alert(
+        message.bot,
+        detail_text,
+        reply_markup=detail_keyboard,
+    )
 
     await state.clear()
 
@@ -91,8 +86,7 @@ async def save_support_request(message: Message, state: FSMContext):
 
     await message.answer(SUPPORT_REQUEST_SAVED_TEXT)
     await message.answer(
-        "Главное меню",
+        START_TEXT,
         reply_markup=keyboard,
+        disable_web_page_preview=True,
     )
-
-

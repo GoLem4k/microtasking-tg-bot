@@ -3,12 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import (
-    Integer, String, ForeignKey, Numeric, DateTime, Enum as SAEnum, Text, Boolean
-)
+from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
 
 class SubmissionStatus(str, Enum):
     IN_PROGRESS = "in_progress"
@@ -31,6 +30,7 @@ class TaskSubmission(Base):
         nullable=False,
     )
 
+    performer_login: Mapped[str | None] = mapped_column(String(255), nullable=True)
     screenshot_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     status: Mapped[SubmissionStatus] = mapped_column(

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Sequence
 
 from sqlalchemy import func, select
 
 from db.database import get_session
-from db.models import SubmissionStatus, Task, TaskSubmission, User
+from db.models import City, SubmissionStatus, Task, TaskSubmission, TaskStatus, User
 
 
 class TaskSubmissionService:
@@ -27,6 +27,7 @@ class TaskSubmissionService:
                     TaskSubmission.id.label("id"),
                     TaskSubmission.user_id.label("user_id"),
                     TaskSubmission.task_id.label("task_id"),
+                    TaskSubmission.performer_login.label("performer_login"),
                     TaskSubmission.screenshot_id.label("screenshot_id"),
                     TaskSubmission.status.label("status"),
                     TaskSubmission.created_at.label("created_at"),
@@ -52,6 +53,7 @@ class TaskSubmissionService:
                     TaskSubmission.id.label("id"),
                     TaskSubmission.user_id.label("user_id"),
                     TaskSubmission.task_id.label("task_id"),
+                    TaskSubmission.performer_login.label("performer_login"),
                     TaskSubmission.screenshot_id.label("screenshot_id"),
                     TaskSubmission.status.label("status"),
                     TaskSubmission.created_at.label("created_at"),
@@ -138,6 +140,26 @@ class TaskSubmissionService:
             await session.refresh(submission)
             return submission
 
+    async def create_for_user(self, *, user_id: int, task_id: int) -> TaskSubmission | None:
+        async with get_session() as session:
+            user = await session.get(User, user_id)
+            task = await session.get(Task, task_id)
+            if user is None or task is None:
+                return None
+            if task.status != TaskStatus.ACTIVE or task.current_completions >= task.max_completions:
+                return None
+            submission = TaskSubmission(
+                user_id=user.id,
+                task_id=task.id,
+                status=SubmissionStatus.IN_PROGRESS,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            session.add(submission)
+            await session.flush()
+            await session.refresh(submission)
+            return submission
+
     async def set_status(self, submission_id: int, status: SubmissionStatus) -> TaskSubmission | None:
         async with get_session() as session:
             submission = await session.get(TaskSubmission, submission_id)
@@ -177,6 +199,135 @@ class TaskSubmissionService:
             submission.screenshot_id = screenshot_id
             if status is not None:
                 submission.status = status
+            submission.updated_at = datetime.utcnow()
+            await session.flush()
+            await session.refresh(submission)
+            return submission
+
+    async def cleanup_expired_in_progress(self, *, user_id: int, hours: int = 24) -> int:
+        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        async with get_session() as session:
+            stmt = select(TaskSubmission).where(
+                TaskSubmission.user_id == user_id,
+                TaskSubmission.status == SubmissionStatus.IN_PROGRESS,
+                TaskSubmission.created_at < cutoff,
+            )
+            result = await session.execute(stmt)
+            submissions = list(result.scalars().all())
+            for submission in submissions:
+                await session.delete(submission)
+            if submissions:
+                await session.flush()
+            return len(submissions)
+
+    async def get_in_progress_for_user(self, user_id: int) -> dict[str, Any] | None:
+        async with get_session() as session:
+            stmt = (
+                select(
+                    TaskSubmission.id.label("id"),
+                    TaskSubmission.user_id.label("user_id"),
+                    TaskSubmission.task_id.label("task_id"),
+                    TaskSubmission.performer_login.label("performer_login"),
+                    TaskSubmission.screenshot_id.label("screenshot_id"),
+                    TaskSubmission.status.label("status"),
+                    TaskSubmission.created_at.label("created_at"),
+                    TaskSubmission.updated_at.label("updated_at"),
+                    Task.title.label("task_title"),
+                    Task.description.label("task_description"),
+                    Task.note.label("instruction_url"),
+                    Task.reward.label("reward"),
+                    Task.category.label("task_category"),
+                    City.name.label("city_name"),
+                )
+                .select_from(TaskSubmission)
+                .join(Task, Task.id == TaskSubmission.task_id)
+                .outerjoin(City, City.id == Task.city_id)
+                .where(
+                    TaskSubmission.user_id == user_id,
+                    TaskSubmission.status == SubmissionStatus.IN_PROGRESS,
+                )
+                .order_by(TaskSubmission.created_at.desc(), TaskSubmission.id.desc())
+                .limit(1)
+            )
+            row = (await session.execute(stmt)).mappings().first()
+            if row is None:
+                return None
+            return self._normalize_active_row(dict(row))
+
+    @staticmethod
+    def _normalize_active_row(row: dict[str, Any]) -> dict[str, Any]:
+        status = row.get("status")
+        task_category = row.get("task_category")
+        row["status"] = status.value if hasattr(status, "value") else str(status)
+        row["task_category"] = task_category.value if hasattr(task_category, "value") else str(task_category or "main")
+        reward = row.get("reward")
+        row["reward"] = int(reward or 0)
+        return row
+
+    async def delete_in_progress_for_user(self, user_id: int) -> int:
+        async with get_session() as session:
+            stmt = select(TaskSubmission).where(
+                TaskSubmission.user_id == user_id,
+                TaskSubmission.status == SubmissionStatus.IN_PROGRESS,
+            )
+            result = await session.execute(stmt)
+            submissions = list(result.scalars().all())
+            for submission in submissions:
+                await session.delete(submission)
+            if submissions:
+                await session.flush()
+            return len(submissions)
+
+    async def set_performer_login(self, submission_id: int, performer_login: str) -> TaskSubmission | None:
+        async with get_session() as session:
+            submission = await session.get(TaskSubmission, submission_id)
+            if submission is None:
+                return None
+            submission.performer_login = performer_login
+            submission.updated_at = datetime.utcnow()
+            await session.flush()
+            await session.refresh(submission)
+            return submission
+
+    async def submit_for_review(self, submission_id: int, *, screenshot_id: str) -> TaskSubmission | None:
+        async with get_session() as session:
+            submission = await session.get(TaskSubmission, submission_id)
+            if submission is None:
+                return None
+            if submission.status != SubmissionStatus.IN_PROGRESS:
+                return submission
+
+            task = await session.get(Task, submission.task_id)
+            if task is None:
+                return None
+
+            submission.screenshot_id = screenshot_id
+            submission.status = SubmissionStatus.PENDING
+            submission.updated_at = datetime.utcnow()
+
+            task.current_completions += 1
+            if task.current_completions >= task.max_completions:
+                task.status = TaskStatus.COMPLETED
+
+            await session.flush()
+            await session.refresh(submission)
+            return submission
+
+
+    async def reject_pending_submission(self, submission_id: int) -> TaskSubmission | None:
+        async with get_session() as session:
+            submission = await session.get(TaskSubmission, submission_id)
+            if submission is None:
+                return None
+
+            task = await session.get(Task, submission.task_id)
+
+            if submission.status == SubmissionStatus.PENDING and task is not None and task.current_completions > 0:
+                task.current_completions -= 1
+                if task.status == TaskStatus.COMPLETED and task.current_completions < task.max_completions:
+                    task.status = TaskStatus.ACTIVE
+
+            submission.status = SubmissionStatus.REJECTED
             submission.updated_at = datetime.utcnow()
             await session.flush()
             await session.refresh(submission)
