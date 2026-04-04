@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from config import (
     CHANNEL_URL,
@@ -119,9 +120,10 @@ def _format_amount(value: int | float | Decimal | None) -> str:
         return text
     return str(value)
 
+MSK = ZoneInfo("Europe/Moscow")
 
 def get_profile_text(profile_data: dict) -> str:
-    now_text = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    now_text = datetime.now(MSK).strftime("%d.%m.%Y %H:%M:%S")
     created_at = profile_data["created_at"]
     registration_days = max(0, (datetime.now().date() - created_at.date()).days)
     username = f"@{profile_data['username']}" if profile_data.get("username") else "не указан"
@@ -137,7 +139,7 @@ def get_profile_text(profile_data: dict) -> str:
 
     return (
         "Личный кабинет\n\n"
-        f"🗓 Дата и время: {now_text}\n"
+        f"🗓 Дата и время: {now_text} МСК\n"
         f"🆔 ID пользователя: {profile_data['user_id']}\n"
         f"⚜️ Логин: {username}\n"
         f"💫 Статус: {status}\n"
@@ -150,10 +152,10 @@ def get_profile_text(profile_data: dict) -> str:
         f"🤝 Заработано с рефералов: {referral_earnings}\n"
         f"🔗 Количество приглашенных рефералов 1 уровня: {profile_data.get('level1_count', 0)}\n"
         f"🔗 Количество приглашенных рефералов 2 уровня: {profile_data.get('level2_count', 0)}\n\n"
-        "🔝 Место в ТОПе:\n"
-        f"├по заработку: {profile_data.get('rank_by_task_earnings', 1)}\n"
-        f"├по количеству рефералов: {profile_data.get('rank_by_referrals', 1)}\n"
-        f"└по заработку с рефералов: {profile_data.get('rank_by_referral_earnings', 1)}\n\n"
+        # "🔝 Место в ТОПе:\n"
+        # f"├по заработку: {profile_data.get('rank_by_task_earnings', 1)}\n"
+        # f"├по количеству рефералов: {profile_data.get('rank_by_referrals', 1)}\n"
+        # f"└по заработку с рефералов: {profile_data.get('rank_by_referral_earnings', 1)}\n\n"
         "Ссылки:\n"
         f"🗣 Новостной канал: {NEWS_CHANNEL_URL or CHANNEL_URL}\n"
         f"💼 Чат работников: {WORKERS_CHAT_URL or CHAT_URL}\n"

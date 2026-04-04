@@ -20,16 +20,6 @@ services:
       retries: 20
       start_period: 40s
 
-  adminer:
-    image: adminer:latest
-    container_name: microtasking-adminer
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-
   migrate:
     build: .
     container_name: microtasking-migrate

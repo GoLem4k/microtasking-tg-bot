@@ -1123,3 +1123,28 @@ async def admin_support_delete(callback: CallbackQuery):
         return
     await _render_support_list(callback.message, offset=0)
     await callback.answer("Обращение удалено")
+
+@router.callback_query(F.data.startswith("admin_performer_delete:"))
+async def performer_delete(callback: CallbackQuery):
+    if not await _ensure_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    user_id = int(callback.data.split(":", 1)[1])
+
+    if user_id == callback.from_user.id:
+        await callback.answer("Нельзя удалить самого себя", show_alert=True)
+        return
+
+    user = await user_service.get_by_id(user_id)
+    if user is None:
+        await callback.answer("Пользователь не найден", show_alert=True)
+        return
+
+    await user_service.delete(user_id)
+
+    await callback.message.edit_text(
+        f"Пользователь ID {user_id} удалён.",
+        reply_markup=build_back_keyboard("performers")
+    )
+    await callback.answer("Пользователь удалён")

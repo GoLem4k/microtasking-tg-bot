@@ -89,4 +89,5 @@ async def save_support_request(message: Message, state: FSMContext):
         START_TEXT,
         reply_markup=keyboard,
         disable_web_page_preview=True,
+        parse_mode="HTML"
     )

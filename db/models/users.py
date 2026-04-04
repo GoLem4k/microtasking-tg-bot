@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import BigInteger, String, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -8,6 +9,7 @@ from sqlalchemy.dialects.mysql import DATETIME
 
 from .base import Base
 
+MSK = ZoneInfo("Europe/Moscow")
 
 class UserStatus(str, Enum):
     USER = "user"
@@ -50,7 +52,7 @@ class User(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DATETIME(fsp=6),
-        default=datetime.utcnow,
+        default=lambda: datetime.now(MSK),
         nullable=False,
     )
 
