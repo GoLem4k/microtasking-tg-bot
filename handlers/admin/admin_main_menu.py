@@ -7,6 +7,7 @@ from db.services.task_submissions_service import TaskSubmissionService
 from db.services.tasks_service import TaskService
 from db.services.users_service import UserService
 from db.services.withdraw_requests_service import WithdrawRequestService
+from handlers.admin.admin_panel import _ensure_admin
 from keyboards.admin.admin_main_menu import admin_main_keyboard
 from texts.messages import get_admin_main_text
 
@@ -32,8 +33,18 @@ async def _get_admin_dashboard_text() -> str:
 
 @router.message(Command("admin"))
 async def admin_menu_command(message: Message):
-    await message.answer(await _get_admin_dashboard_text(), reply_markup=admin_main_keyboard)
+    if not await _ensure_admin(message.from_user.id):
+        await message.answer(
+            "😐 У вас нет доступа к админ-панели.\n\n"
+            "👨‍💻 Вернуться в пользовательское меню можно\n"
+            "по команде: /start или /menu"
+        )
+        return
 
+    await message.answer(
+        await _get_admin_dashboard_text(),
+        reply_markup=admin_main_keyboard,
+    )
 
 @router.callback_query(F.data == "admin_main_menu")
 async def admin_menu_callback(callback: CallbackQuery):

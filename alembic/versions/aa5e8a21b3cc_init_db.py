@@ -38,7 +38,7 @@ def upgrade() -> None:
     )
     op.create_table('users',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
-    sa.Column('username', sa.String(length=255), nullable=False),
+    sa.Column('username', sa.String(length=255), nullable=True),
     sa.Column('city_id', sa.Integer(), nullable=True),
     sa.Column('ref_parent_id', sa.BigInteger(), nullable=True),
     sa.Column('created_at', mysql.DATETIME(fsp=6), nullable=False),
